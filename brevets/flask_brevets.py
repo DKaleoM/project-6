@@ -8,7 +8,6 @@ import flask
 from flask import request
 import arrow  # Replacement for datetime, based on moment.js
 import acp_times  # Brevet time calculations
-import config
 
 import source_gen_tests  #testing code source generation
 from source_gen_tests import create_tests_py
@@ -16,6 +15,7 @@ from source_gen_tests import create_tests_py
 import mongo_utils #for saving and loading brevets
 
 import json #to parse requests sent to us
+import os #to read environment variables
 
 import logging
 
@@ -23,7 +23,6 @@ import logging
 # Globals
 ###
 app = flask.Flask(__name__)
-CONFIG = config.configuration()
 
 ###
 # Pages
@@ -156,10 +155,11 @@ def _get_times():
 
 #############
 
-app.debug = CONFIG.DEBUG
+app.debug = os.environ['DEBUG']
 if app.debug:
     app.logger.setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
-    print("Opening for global access on port {}".format(CONFIG.PORT))
-    app.run(port=CONFIG.PORT, host="0.0.0.0")
+    port = os.environ['PORT']
+    print("Opening for global access on port {}".format(port))
+    app.run(port=port, host="0.0.0.0")

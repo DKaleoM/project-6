@@ -2,8 +2,8 @@ import os
 import arrow
 from pymongo import MongoClient
 
-client = MongoClient('mongodb://' + os.environ['MONGODB_HOSTNAME'], 27017)
-db = client.mydb
+#client = MongoClient('mongodb://' + os.environ['MONGODB_HOSTNAME'], 27017)
+#db = client.mydb
 
 
 class SingleBrevetDatabase:
@@ -13,8 +13,9 @@ class SingleBrevetDatabase:
 
     def StoreBrevet(self, brevet):
         """Stores the brevet in the database, replacing any already there."""
-        
-        db.get_collection(self.collectionName).replace_one({}, brevet.toDict(), True)
+        raise NotImplementedError("Database not supported, use API container instead")
+    
+        #db.get_collection(self.collectionName).replace_one({}, brevet.toDict(), True)
         
 
     def GetBrevet(self):
@@ -22,6 +23,7 @@ class SingleBrevetDatabase:
 
         Returns None if there is no brevet stored.
         Throws an error if something else goes wrong."""
+        raise NotImplementedError("Database not supported, use API container instead")
         try:
             documents = db.get_collection(self.collectionName).find()
 
@@ -39,6 +41,7 @@ class SingleBrevetDatabase:
 
     def DeleteBrevet(self):
         """Deletes the stored brevet."""
+        raise NotImplementedError("Database not supported, use API container instead")
         db.get_collection(self.collectionName).find_one_and_delete({})
 
 
