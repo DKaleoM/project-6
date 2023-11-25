@@ -12,7 +12,10 @@ import acp_times  # Brevet time calculations
 import source_gen_tests  #testing code source generation
 from source_gen_tests import create_tests_py
 
-import mongo_utils #for saving and loading brevets
+import brevet_utils
+
+#import mongo_utils
+import api_utils #for saving and loading brevets using the API
 
 import json #to parse requests sent to us
 import os #to read environment variables
@@ -112,6 +115,10 @@ def _calc_times():
     
     return flask.jsonify(succeeded = True, result=result)
 
+API_ADDR = os.environ['API_ADDR']
+API_PORT = os.environ['API_PORT']
+API_DB = api_utils.ApiDatabase(API_ADDR, API_PORT, app.logger)
+
 @app.route("/_times", methods=['POST'])
 def _insert_times():
     #we use request.json instead of request.args to get the data
@@ -126,31 +133,49 @@ def _insert_times():
     app.logger.debug("request.json: {}".format(request.json))
 
     #create brevet to store
-    brevet = mongo_utils.Brevet(brevet_dist, time_str)
+    brevet = brevet_utils.Brevet(brevet_dist, time_str)
     
     for i in range(len(km_vals)):
         brevet.addCheckpoint(km_vals[i],open_vals[i],close_vals[i])
+
+    app.logger.debug("brevet created")
         
     #add brevet as only item in collection "brevet"
-    db = mongo_utils.SingleBrevetDatabase("brevet")
-    
-    db.StoreBrevet(brevet)
+    db = API_DB
 
-    #return success
-    return flask.jsonify(succeeded = True)
+    try:
+        brevetId = db.StoreBrevet(brevet)
+        return flask.jsonify(succeeded = True)
+    except Exception as e:
+        app.logger.error("db failed to insert brevet!")
+        app.logger.error(e)
+        app.logger.error(db.DumpLogs(True))
+        return flask.jsonify(succeeded = False, msg = str(e))
+        
+    
 
 @app.route("/_times", methods=['GET'])
 def _get_times():
     #fetch brevet
-    db = mongo_utils.SingleBrevetDatabase("brevet")
-    brevet = db.GetBrevet()
+    db = API_DB
 
-    if brevet is None:
-        #special case with no brevet
-        return flask.jsonify(succeeded = False, msg="No brevet saved yet!")
+    try:
+        brevet = db.GetLatestBrevet()
 
-    #return brevet
-    return flask.jsonify(succeeded = True, result=brevet.toDict())
+        if brevet is None:
+            #special case with no brevet
+            return flask.jsonify(succeeded = False, msg="No brevet saved yet!")
+
+        #return brevet
+        brevetDict = brevet.toDict()
+        app.logger.debug(brevetDict)
+        app.logger.debug(arrow.get(brevetDict["start_time"]))
+        return flask.jsonify(succeeded = True, result=brevetDict)
+    except Exception as e:
+        app.logger.error("db failed to insert brevet!")
+        app.logger.error(e)
+        app.logger.error(db.DumpLogs(True))
+        return flask.jsonify(succeeded = False, msg = str(e))
 
 
 #############

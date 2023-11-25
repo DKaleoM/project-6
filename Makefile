@@ -24,7 +24,7 @@ run:
 	@(make restart)
 
 logs:
-	@(docker compose logs brevets)
+	@(docker compose logs brevets; docker compose logs api)
 
 clean:
 	@(docker stop $$(docker ps -a -q); docker rm $$(docker ps -a -q))
